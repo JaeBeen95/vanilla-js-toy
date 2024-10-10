@@ -4,19 +4,20 @@ const content = document.createElement("div");
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
 
-xhr.open("GET", NEWS_URL, false);
-xhr.send();
+function getData(url) {
+  xhr.open("GET", url, false);
+  xhr.send();
 
-const newsFeed = JSON.parse(xhr.response);
+  return JSON.parse(xhr.response);
+}
+
+const newsFeed = getData(NEWS_URL);
 const ul = document.createElement("ul");
 
 window.addEventListener("hashchange", function () {
   const id = location.hash.substring(1);
 
-  xhr.open("GET", CONTENT_URL.replace("@id", id), false);
-  xhr.send();
-
-  const newsContent = JSON.parse(xhr.response);
+  const newsContent = getData(CONTENT_URL.replace("@id", id));
   const title = document.createElement("h1");
 
   title.innerHTML = newsContent.title;
