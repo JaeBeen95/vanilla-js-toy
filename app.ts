@@ -1,40 +1,42 @@
+interface News {
+  id: number;
+  user: string;
+  time: number;
+  time_ago: string;
+  type: string;
+  url: string;
+}
+
+interface NewsFeed extends News {
+  title: string;
+  points: number;
+  comments_count: number;
+  domain: string;
+  read?: boolean;
+}
+
+interface NewsDetail extends News {
+  title: string;
+  points: number;
+  content: string;
+  comments: NewsComments[];
+  comments_count: number;
+  domain: string;
+}
+
+interface NewsComments extends News {
+  content: string;
+  comments: NewsComments[];
+  level: number;
+}
+
 interface Store {
   currentPage: number;
   feeds: NewsFeed[];
 }
 
-interface News {
-  readonly id: number;
-  readonly title: string;
-  readonly user: string;
-  readonly time: number;
-  readonly time_ago: string;
-  readonly comments_count: number;
-  readonly type: string;
-  readonly url: string;
-}
-
-interface NewsFeed extends News {
-  readonly points: number;
-  readonly domain: string;
-  read?: boolean;
-}
-
-interface NewsDetail extends News {
-  readonly points: number;
-  readonly comments: NewsComment[];
-  readonly content: string;
-  readonly domain: string;
-}
-
-interface NewsComment extends News {
-  readonly comments: NewsComment[];
-  readonly content: string;
-  readonly level: number;
-}
-
 const container: HTMLElement | null = document.getElementById("root");
-const xhr: XMLHttpRequest = new XMLHttpRequest();
+const ajax: XMLHttpRequest = new XMLHttpRequest();
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
 const store: Store = {
@@ -42,11 +44,11 @@ const store: Store = {
   feeds: [],
 };
 
-function getData<XhrResponse>(url: string): XhrResponse {
-  xhr.open("GET", url, false);
-  xhr.send();
+function getData<ajaxResponse>(url: string): ajaxResponse {
+  ajax.open("GET", url, false);
+  ajax.send();
 
-  return JSON.parse(xhr.response);
+  return JSON.parse(ajax.response);
 }
 
 function makeFeeds(feeds: NewsFeed[]): NewsFeed[] {
@@ -66,8 +68,7 @@ function updateView(html: string): void {
 }
 
 function newsFeed(): void {
-  let newsFeed: NewsFeed[] = store.feeds;
-
+  let newsFeed = store.feeds;
   const newsList = [];
   let template = `
     <div class="bg-gray-600 min-h-screen">
@@ -94,14 +95,14 @@ function newsFeed(): void {
     </div>
   `;
 
-  if (newsFeed.length === 0) {
+  if (store.feeds.length === 0) {
     newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
   }
 
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push(`
       <div class="p-6 ${
-        newsFeed[i].read ? "bg-red-200" : "bg-white"
+        newsFeed[i].read ? "bg-red-500" : "bg-white"
       } mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
         <div class="flex">
           <div class="flex-auto">
@@ -114,24 +115,30 @@ function newsFeed(): void {
           </div>
         </div>
         <div class="flex mt-3">
-          <div class="grid grid-cols-3 text-sm text-gray-500">
-            <div><i class="fas fa-user mr-1"></i>${newsFeed[i].user}</div>
-            <div><i class="fas fa-heart mr-1"></i>${newsFeed[i].points}</div>
-            <div><i class="far fa-clock mr-1"></i>${newsFeed[i].time_ago}</div>
-          </div>  
+          <div class="flex gap-5 text-sm text-gray-500 w-full items-center justify-start">
+            <div class="flex items-center"><i class="fas fa-user mr-1"></i>${newsFeed[i].user}</div>
+            <div class="flex items-center"><i class="fas fa-heart mr-1"></i>${
+              newsFeed[i].points
+            }</div>
+            <div class="flex items-center"><i class="far fa-clock mr-1"></i>${
+              newsFeed[i].time_ago
+            }</div>
+          </div>
         </div>
       </div>    
     `);
   }
 
+  const totalPages: number = Math.ceil(newsFeed.length / 10);
+
   template = template.replace("{{__news_feed__}}", newsList.join(""));
   template = template.replace(
     "{{__prev_page__}}",
-    String(store.currentPage > 1 ? store.currentPage - 1 : 1)
+    String(store.currentPage <= 1 ? 1 : store.currentPage - 1)
   );
   template = template.replace(
     "{{__next_page__}}",
-    String(store.currentPage + 1)
+    String(store.currentPage >= totalPages ? totalPages : store.currentPage + 1)
   );
 
   updateView(template);
@@ -150,7 +157,7 @@ function newsDetail(): void {
             </div>
             <div class="items-center justify-end">
               <a href="#/page/${store.currentPage}" class="text-gray-500">
-                <i class="fa fa-times">←</i>
+                <i class="fa fa-times"></i>
               </a>
             </div>
           </div>
@@ -176,32 +183,29 @@ function newsDetail(): void {
     }
   }
 
-  updateView(
-    template.replace("{{__comments__}}", makeComment(newsContent.comments))
-  );
-}
+  function makeComment(comments: NewsComments[]): string {
+    const commentsList = [];
 
-function makeComment(comments: NewsComment[]): string {
-  const commentString = [];
-
-  for (let i = 0; i < comments.length; i++) {
-    const comment: NewsComment = comments[i];
-    commentString.push(`
-      <div style="padding-left: ${comment.level * 40}px;" class="mt-4">
-        <div class="text-gray-400">
-          <i class="fa fa-sort-up mr-2"></i>
-          <strong>${comment.user}</strong> ${comment.time_ago}
-        </div>
-        <p class="text-gray-700">${comment.content}</p>
-      </div>      
-    `);
-
-    if (comment.comments.length > 0) {
-      commentString.push(makeComment(comments[i].comments));
+    for (let i = 0; i < comments.length; i++) {
+      const comment: NewsComments = comments[i];
+      commentsList.push(`
+        <div style="padding-left: ${comment.level}px" class="mt-4">
+          <div class="text-gray-400">
+            <i class="fa fa-sort-up mr-2"></i>
+            <strong>${comment.user}</strong> ${comment.time_ago}
+          </div>
+          <p class="text-gray-700">${comment.content}</p>
+        </div>      
+      `);
+      if (comment.comments.length > 0) {
+        commentsList.push(makeComment(comment.comments));
+      }
     }
+
+    return commentsList.join("");
   }
 
-  return commentString.join("");
+  updateView(template.replace("{{__comments__}}", makeComment(newsContent.comments)));
 }
 
 function router(): void {
@@ -210,7 +214,7 @@ function router(): void {
   if (routePath === "") {
     newsFeed();
   } else if (routePath.indexOf("#/page/") >= 0) {
-    store.currentPage = Number(routePath.substring(7));
+    store.currentPage = +routePath.substring(7);
     newsFeed();
   } else {
     newsDetail();
@@ -218,5 +222,4 @@ function router(): void {
 }
 
 window.addEventListener("hashchange", router);
-
 router();
