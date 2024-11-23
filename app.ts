@@ -1,42 +1,41 @@
-interface News {
-  id: number;
-  user: string;
-  time: number;
-  time_ago: string;
-  type: string;
-  url: string;
-}
-
-interface NewsFeed extends News {
-  title: string;
-  points: number;
-  comments_count: number;
-  domain: string;
-  read?: boolean;
-}
-
-interface NewsDetail extends News {
-  title: string;
-  points: number;
-  content: string;
-  comments: NewsComments[];
-  comments_count: number;
-  domain: string;
-}
-
-interface NewsComments extends News {
-  content: string;
-  comments: NewsComments[];
-  level: number;
-}
-
 interface Store {
   currentPage: number;
   feeds: NewsFeed[];
 }
 
+interface News {
+  readonly id: number;
+  readonly user: string;
+  readonly time: number;
+  readonly time_ago: string;
+  readonly type: string;
+  readonly url: string;
+}
+
+interface NewsFeed extends News {
+  readonly title: string;
+  readonly points: number;
+  readonly comments_count: number;
+  readonly domain: string;
+  read?: boolean;
+}
+
+interface NewsDetail extends News {
+  readonly title: string;
+  readonly points: number;
+  readonly content: string;
+  readonly comments: NewsComments[];
+  readonly comments_count: number;
+  readonly domain: string;
+}
+
+interface NewsComments extends News {
+  readonly content: string;
+  readonly comments: NewsComments[];
+  readonly level: number;
+}
+
 const container: HTMLElement | null = document.getElementById("root");
-const ajax: XMLHttpRequest = new XMLHttpRequest();
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
 const store: Store = {
@@ -44,11 +43,33 @@ const store: Store = {
   feeds: [],
 };
 
-function getData<ajaxResponse>(url: string): ajaxResponse {
-  ajax.open("GET", url, false);
-  ajax.send();
+class Api {
+  url: string;
+  ajax: XMLHttpRequest;
 
-  return JSON.parse(ajax.response);
+  constructor(url: string) {
+    this.url = url;
+    this.ajax = new XMLHttpRequest();
+  }
+
+  getRequest<ajaxResponse>(): ajaxResponse {
+    this.ajax.open("GET", this.url, false);
+    this.ajax.send();
+
+    return JSON.parse(this.ajax.response);
+  }
+}
+
+class NewsFeedApi extends Api {
+  getData(): NewsFeed[] {
+    return this.getRequest<NewsFeed[]>();
+  }
+}
+
+class NewsDetailApi extends Api {
+  getData(): NewsDetail {
+    return this.getRequest<NewsDetail>();
+  }
 }
 
 function makeFeeds(feeds: NewsFeed[]): NewsFeed[] {
@@ -68,6 +89,7 @@ function updateView(html: string): void {
 }
 
 function newsFeed(): void {
+  const api = new NewsFeedApi(NEWS_URL);
   let newsFeed = store.feeds;
   const newsList = [];
   let template = `
@@ -96,7 +118,7 @@ function newsFeed(): void {
   `;
 
   if (store.feeds.length === 0) {
-    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
+    newsFeed = store.feeds = makeFeeds(api.getData());
   }
 
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
@@ -146,7 +168,8 @@ function newsFeed(): void {
 
 function newsDetail(): void {
   const id = location.hash.substring(7);
-  const newsContent = getData<NewsDetail>(CONTENT_URL.replace("@id", id));
+  const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
+  const newsContent = api.getData();
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
