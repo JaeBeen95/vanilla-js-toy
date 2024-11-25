@@ -1,29 +1,37 @@
 import type { NewsDetail, NewsFeed } from "../types";
 
 export class Api {
-  url: string;
   ajax: XMLHttpRequest;
+  url: string;
 
   constructor(url: string) {
-    this.url = url;
     this.ajax = new XMLHttpRequest();
+    this.url = url;
   }
 
-  getRequest<ajaxResponse>(): ajaxResponse {
+  getRequest<AjaxResponse>(): AjaxResponse {
     this.ajax.open("GET", this.url, false);
     this.ajax.send();
 
-    return JSON.parse(this.ajax.response);
+    return JSON.parse(this.ajax.response) as AjaxResponse;
   }
 }
 
 export class NewsFeedApi extends Api {
+  constructor(url: string) {
+    super(url);
+  }
+
   getData(): NewsFeed[] {
     return this.getRequest<NewsFeed[]>();
   }
 }
 
 export class NewsDetailApi extends Api {
+  constructor(url: string) {
+    super(url);
+  }
+
   getData(): NewsDetail {
     return this.getRequest<NewsDetail>();
   }

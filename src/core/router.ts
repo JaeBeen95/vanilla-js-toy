@@ -1,36 +1,51 @@
+import { RouteInfo } from "../types";
 import View from "./view";
-import type { RouteInfo } from "../types";
-
 export default class Router {
-  private routeTable: RouteInfo[];
-  private defaultRoute: RouteInfo | null;
+  defaultRoute: RouteInfo | null;
+  routeTable: RouteInfo[];
 
   constructor() {
     window.addEventListener("hashchange", this.route.bind(this));
-
-    this.routeTable = [];
     this.defaultRoute = null;
+    this.routeTable = [];
   }
 
-  setDefaultPage(page: View): void {
-    this.defaultRoute = { path: "", page };
+  go = (): void => {
+    this.route();
+  };
+
+  setDefaultPage(page: View, params: RegExp | null = null): void {
+    this.defaultRoute = {
+      path: "",
+      page,
+      params,
+    };
   }
 
-  addRoutePath(path: string, page: View): void {
-    this.routeTable.push({ path, page });
+  addRoutePath(path: string, page: View, params: RegExp | null = null): void {
+    this.routeTable.push({ path, page, params });
   }
 
-  route() {
-    const routePath = location.hash;
+  private route() {
+    const routePath: string = location.hash;
 
     if (routePath === "" && this.defaultRoute) {
-      this.defaultRoute?.page.render();
+      this.defaultRoute.page.render();
+      return;
     }
 
     for (const routeInfo of this.routeTable) {
       if (routePath.indexOf(routeInfo.path) >= 0) {
-        routeInfo.page.render();
-        break;
+        if (routeInfo.params) {
+          const parseParams = routePath.match(routeInfo.params);
+
+          if (parseParams) {
+            routeInfo.page.render.apply(null, [parseParams[1]]);
+          }
+        } else {
+          routeInfo.page.render();
+        }
+        return;
       }
     }
   }

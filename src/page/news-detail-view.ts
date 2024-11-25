@@ -35,10 +35,8 @@ export default class NewsDetailView extends View {
     super(containerId, template);
   }
 
-  render(): void {
-    const id = location.hash.substring(7);
+  render = (id: string): void => {
     const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
-    const newsDetail = api.getData();
 
     for (let i = 0; i < window.store.feeds.length; i++) {
       if (window.store.feeds[i].id === Number(id)) {
@@ -47,17 +45,20 @@ export default class NewsDetailView extends View {
       }
     }
 
-    this.setTemplateData("comments", this.makeComment(newsDetail.comments));
+    const newsDetail = api.getData();
+
     this.setTemplateData("current_page", String(window.store.currentPage));
     this.setTemplateData("title", newsDetail.title);
     this.setTemplateData("content", newsDetail.content);
+    this.setTemplateData("comments", this.makeComment(newsDetail.comments));
 
     this.updateView();
-  }
+  };
 
-  makeComment(comments: NewsComments[]): string {
+  private makeComment(comments: NewsComments[]): string {
     for (let i = 0; i < comments.length; i++) {
       const { level, user, time_ago, content, comments: childComments } = comments[i];
+
       this.addHtml(`
         <div style="padding-left: ${level * 40}px" class="mt-4">
           <div class="text-gray-400">

@@ -40,4 +40,5 @@ export interface NewsComments extends News {
 export interface RouteInfo {
   path: string;
   page: View;
+  params: RegExp | null;
 }

@@ -44,8 +44,8 @@ export default class NewsFeedView extends View {
     }
   }
 
-  render(): void {
-    window.store.currentPage = Number(location.hash.substring(7) || 1);
+  render = (page: string = "1"): void => {
+    window.store.currentPage = Number(page);
 
     for (let i = (window.store.currentPage - 1) * 10; i < window.store.currentPage * 10; i++) {
       const { read, id, title, comments_count, user, points, time_ago } = this.feeds[i];
@@ -86,9 +86,9 @@ export default class NewsFeedView extends View {
     );
 
     this.updateView();
-  }
+  };
 
-  makeFeeds(): void {
+  private makeFeeds(): void {
     for (let i = 0; i < this.feeds.length; i++) {
       this.feeds[i].read = false;
     }
