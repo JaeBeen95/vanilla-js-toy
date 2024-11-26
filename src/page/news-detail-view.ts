@@ -1,7 +1,7 @@
 import View from "../core/view";
 import { NewsDetailApi } from "../core/api";
 import { CONTENT_URL } from "../config";
-import type { NewsComments } from "../types";
+import type { NewsComments, NewsStore } from "../types";
 
 const template: string = `
   <div class="bg-gray-600 min-h-screen pb-8">
@@ -31,23 +31,21 @@ const template: string = `
 `;
 
 export default class NewsDetailView extends View {
-  constructor(containerId: string) {
+  private store: NewsStore;
+
+  constructor(containerId: string, store: NewsStore) {
     super(containerId, template);
+
+    this.store = store;
   }
 
   render = (id: string): void => {
     const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
 
-    for (let i = 0; i < window.store.feeds.length; i++) {
-      if (window.store.feeds[i].id === Number(id)) {
-        window.store.feeds[i].read = true;
-        break;
-      }
-    }
-
     const newsDetail = api.getData();
 
-    this.setTemplateData("current_page", String(window.store.currentPage));
+    this.store.makeRead(Number(id));
+    this.setTemplateData("current_page", String(this.store.currentPage));
     this.setTemplateData("title", newsDetail.title);
     this.setTemplateData("content", newsDetail.content);
     this.setTemplateData("comments", this.makeComment(newsDetail.comments));
