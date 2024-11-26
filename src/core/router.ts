@@ -1,5 +1,6 @@
 import { RouteInfo } from "../types";
 import View from "./view";
+
 export default class Router {
   defaultRoute: RouteInfo | null;
   routeTable: RouteInfo[];
@@ -26,7 +27,7 @@ export default class Router {
     this.routeTable.push({ path, page, params });
   }
 
-  private route() {
+  private route(): void {
     const routePath: string = location.hash;
 
     if (routePath === "" && this.defaultRoute) {
